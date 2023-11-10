@@ -25,9 +25,6 @@ class Person:
         return sum
 
     def is_sum_needed(self):
-        # text = self.make_list_to_text()
-        # _re_word_boundaries = re.compile(r'\b')
-        # return sum(1 for word in _re_word_boundaries.finditer(text)) >> 1 >= 500
         return self.count_token(self.messages) >= 500
 
     def count_token(self,messages, model="gpt-3.5-turbo"):
