@@ -2,3 +2,5 @@
 /main0.py
 /credentials.json
 .idea/misc.xml
+__pycache__/
+nohup.out
