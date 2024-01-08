@@ -1,6 +1,7 @@
 import json
 
 import openai
+from openai import OpenAI
 import telebot
 from telebot import apihelper
 
@@ -11,6 +12,7 @@ class ChatBot:
     def __init__(self, file_path='credentials.json'):
         self.publish_channel = None
         self.bot = None
+        self.openApi_client = None
         self.file_path = file_path
         self.initialize_bot()
         self.chats = {}
@@ -24,6 +26,10 @@ class ChatBot:
         self.bot = telebot.TeleBot(credentials.get('telegram_api_key'))
         apihelper.SESSION_TIME_TO_LIVE = 5 * 60
         self.publish_channel = credentials.get('publish_channel')
+        self.openApi_client = OpenAI(
+            # defaults to os.environ.get("OPENAI_API_KEY")
+            api_key=credentials.get('openai_api_key')
+        )
 
     def load_credentials(self):
         with open(self.file_path, 'r') as file:
@@ -34,13 +40,21 @@ class ChatBot:
             raise Exception("Credentials not found")
 
     def generate_response(self, prompt):
-        response = openai.ChatCompletion.create(
+        response = self.openApi_client.chat.completions.create(
             model=self.current_model,
             messages=prompt,
             n=1,
             temperature=0.5
         )
         return response.choices[0].message.content
+
+    def generate_voice(self,text):
+        response = self.openApi_client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text
+        )
+        return response
 
     def set_model(self, new_model):
         # Validate that the new_model is allowed (add more models as needed)
@@ -69,6 +83,18 @@ class ChatBot:
                     response = self.set_model(new_model)
                     self.bot.send_message(chat_id, response)
                     return
+                elif message.text.startswith("#speak"):
+                    tts = message.text.split("#speak")[1]
+                    voice = self.generate_voice(tts)
+                    self.bot.send_voice(chat_id, voice)
+                    return
+                elif message.text.startswith("#audio"):
+                    tts = message.text.split("#audio")[1]
+                    voice = self.generate_voice(tts)
+                    self.bot.send_audio(chat_id, voice)
+                    return
+
+
 
                 if person.is_sum_needed():
                     chat_summary = self.generate_response(
