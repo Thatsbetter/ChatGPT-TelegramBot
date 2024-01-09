@@ -40,11 +40,12 @@ class ChatBot:
         if None in (openai.api_key, self.bot.token, self.publish_channel, openai.organization, self.publish_channel):
             raise Exception("Credentials not found")
 
-    def generate_response(self, prompt):
+    def generate_response(self, prompt,max_tokens=500):
         response = self.openApi_client.chat.completions.create(
             model=self.current_model,
             messages=prompt,
             n=1,
+            max_tokens= max_tokens,
             temperature=0.5
         )
         return response.choices[0].message.content
@@ -96,7 +97,7 @@ class ChatBot:
                     person.update_chat(chat_summary)
 
                 person.messages.append({"role": "user", "content": message_text})
-                response = self.generate_response(person.messages)
+                response = self.generate_response(person.messages,100)
                 person.messages.append({"role": "assistant", "content": response})
                 voice = self.generate_voice(response)
                 self.bot.send_audio(person.chat_id, voice)
